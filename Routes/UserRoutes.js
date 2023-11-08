@@ -17,10 +17,11 @@ router.post('/modify-quantity'  , UserController.handleQauantity)
 router.get('/check-address'  , UserController.checkAddress)
 router.post('/add-address'  , UserController.addAddress)
 router.get('/get-user-addresses'  , UserController.getallAddress)
-router.post('/purchase_order'  ,  UserController.do_payment ,  UserController.purchaseOrder , )
+router.post('/purchase_order'  , UserController.purchaseOrder , UserController.do_payment   )
 router.get('/getorders'  , UserController.getAllOrders)
 router.post("/payment", UserController.do_payment );
 router.post("/payment_process",   UserController.process_payemnt);
+router.post("/getPaymetDetaisByID" , UserController.getPaymentDetailsByOrderId)
 
 
 

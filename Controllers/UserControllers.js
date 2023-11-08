@@ -19,6 +19,9 @@ const transporter = nodemailer.createTransport({
       pass: "eircvkkpaaugwxtl",
     },
   });
+
+
+  const PaymentSchema  = require('../Schemas/PaymentSchema')
   
 
 
@@ -35,7 +38,7 @@ exports.do_payment  = async  (req,res , next)=>{
         });
 
         const options = {
-            amount: req.body.amount, // amount in smallest currency unit
+            amount: req.body.total_price   * 100, // amount in smallest currency unit
             currency: "INR",
             receipt: "receipt_order_74394",
         };
@@ -45,8 +48,11 @@ exports.do_payment  = async  (req,res , next)=>{
         console.log("Order" , order)
 
         if (!order) return res.status(500).send("Some error occured");
+        // console.log("body",req.body)
+        // console.log(order)
+        // console.log(typeof order)
         
-        res.json(order);
+        res.json({...order , ['mongo_order_id']  : req.body.order_id});
     } catch (error) {
         console.log("Error" , error)
         res.status(500).send({status : 500 , message : error.error.description });
@@ -56,9 +62,41 @@ exports.do_payment  = async  (req,res , next)=>{
 
 
 exports.process_payemnt = (req,res) =>{
-    console.log(req.body)
+    // console.log('Order_Generate_id' , req.body.order_id)    
+    console.log("rp_order_details" , req.body.rp_order_details.data)
+    console.log("rp_payment_details" , req.body.rp_payment_details)
 
-    res.send("<h1>Payment done</h1>")
+    // res.status(200).send({status : 200 , message  :"Payment done"})
+
+    const {mongo_order_id , amount , created_at}  = req.body.rp_order_details.data;
+    const {razorpay_payment_id ,razorpay_order_id  ,razorpay_signature} = req.body.rp_payment_details
+
+    PaymentSchema.insertMany({
+
+        order_id  : mongo_order_id,
+        order_amount  : amount / 100,
+        txn__payment_id : razorpay_payment_id,
+        txn__order_id : razorpay_order_id,
+        txn_signature : razorpay_signature,
+        txn_date : created_at,
+         status :  razorpay_payment_id ?  1 :  0
+
+
+    }).then((result)=>{
+        if(result.length > 0){
+            res.status(200).send({status : 200 , message : "Pyment Done Sucessfully" , data : {p_id :  razorpay_payment_id}})
+        }
+        else
+        {
+            res.status(400).send({status : 400 , message : "Pyment Failed" , data : {p_id :  null}})
+
+        }
+    }).catch((err)=>{
+        console.log(err)
+        res.status(500).send({status: 500 , message : "Something Went  Wrong|| Cannot Initiate Payment"})
+
+    })
+
 
 }
 
@@ -763,7 +801,7 @@ exports.purchaseOrder  = (req,res ,  next)=>{
         CartSchema.deleteMany({u_id :  uid}).then((res2)=>{
             if(res2.deletedCount != 0)
             {
-                req['order_id'] = result[0]._id
+                req.body['order_id'] = result[0]._id
                 next()
 
                 // transporter.sendMail({
@@ -848,5 +886,22 @@ exports.getAllOrders = (req,res)=>{
     
        })
       
+
+}
+
+
+exports.getPaymentDetailsByOrderId =  (req,res) =>{
+
+        const {id} = req.body
+
+
+        PaymentSchema.find({order_id : id }).then((result)=>{
+            res.status(200).send({status : 200 , data : result})
+        }).catch((err)=>{
+            console.log(err)
+            res.status(500).send({status : 500 , message :"Something Went Wrong || Please Try Again"})
+        
+           })
+
 
 }

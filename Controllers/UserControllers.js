@@ -905,3 +905,11 @@ exports.getPaymentDetailsByOrderId =  (req,res) =>{
 
 
 }
+
+
+exports.getMyProfile = () =>{
+
+
+    
+
+}

@@ -22,7 +22,7 @@ router.get('/getorders'  , UserController.getAllOrders)
 router.post("/payment", UserController.do_payment );
 router.post("/payment_process",   UserController.process_payemnt);
 router.post("/getPaymetDetaisByID" , UserController.getPaymentDetailsByOrderId)
-
+router.get('/get-my-profile') 
 
 
 
